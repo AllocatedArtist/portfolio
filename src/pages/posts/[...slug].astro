@@ -1,5 +1,6 @@
 ---
 import { getCollection, render } from "astro:content";
+import { withBase } from "../../lib/href";
 import Base from "../../layouts/Base.astro";
 import { longDate, machineDate } from "../../lib/date";
 
@@ -12,6 +13,11 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
+
+// Derived, not authored. A project declares which post writes it up; the
+// reverse link falls out of that, so there is only ever one side to keep in
+// sync and a post cannot claim a project that does not point back.
+const projects = await getCollection("projects", (p) => p.data.post?.id === post.id);
 
 // The tex loader stores the pandoc output under `rendered`, so posts render
 // exactly like markdown entries. `headings` comes from rendered.metadata if
@@ -27,7 +33,28 @@ const { Content } = await render(post);
     </time>
   </header>
 
+  {projects.length > 0 && (
+    <p class="meta refs">
+      {projects.map((project) => (
+        <a class="link" href={withBase(`/projects/${project.id}`)}>
+          {project.data.title}
+        </a>
+      ))}
+    </p>
+  )}
+
   <article class="prose">
     <Content />
   </article>
 </Base>
+
+<style>
+  /* Same bottom margin as the project page's .details, so a post with a
+     backlink and a project with tags space their bodies identically. */
+  .refs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-4);
+    margin-block-end: var(--sp-6);
+  }
+</style>

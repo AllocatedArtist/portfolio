@@ -1,0 +1,54 @@
+---
+/**
+ * Privacy-friendly YouTube embed.
+ *
+ * youtube-nocookie.com does not set tracking cookies until playback starts,
+ * and `loading="lazy"` means the iframe costs nothing until it scrolls into
+ * view. No client JavaScript of our own: the shader stays the only script on
+ * the site.
+ *
+ * `title` is required rather than optional because an iframe with no
+ * accessible name is announced as just "frame" by a screen reader.
+ */
+interface Props {
+  /** Bare 11-character video ID, not the full URL. */
+  id: string;
+  title: string;
+  /** Start offset in seconds. */
+  start?: number;
+}
+
+const { id, title, start } = Astro.props;
+
+const params = new URLSearchParams({ rel: "0" });
+if (start) params.set("start", String(start));
+
+const src = `https://www.youtube-nocookie.com/embed/${id}?${params}`;
+---
+
+<div class="embed">
+  <iframe
+    src={src}
+    title={title}
+    loading="lazy"
+    referrerpolicy="strict-origin-when-cross-origin"
+    allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; web-share"
+    allowfullscreen></iframe>
+</div>
+
+<style>
+  /* aspect-ratio rather than the old padding-top hack, so the box reserves
+     its height before the iframe loads and nothing shifts on scroll. */
+  .embed {
+    aspect-ratio: 16 / 9;
+    border: 1px solid var(--rule);
+    background: var(--bg);
+  }
+
+  .embed iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+</style>

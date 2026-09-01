@@ -1,4 +1,4 @@
-import { defineCollection } from 'astro:content';
+import { defineCollection, reference } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { texLoader } from './loaders/tex';
 import { z } from 'astro/zod';
@@ -10,8 +10,22 @@ const projects = defineCollection({
     date: z.coerce.date(),
     blurb: z.string().max(180),
     cover: image(),
-    video: z.string().optional(),
+    // Bare 11-char YouTube ID, not a URL and not a self-hosted file. Rejecting
+    // a pasted URL here is deliberate: it fails at build with a clear message
+    // rather than rendering a broken iframe.
+    video: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{11}$/, 'video must be a bare YouTube ID, not a URL')
+      .optional(),
+    // External destinations only: repo, demo, paper. Values must be absolute
+    // URLs. Internal cross-links go through `post` below, which is validated
+    // against the collection and gets the deploy base applied at render.
     links: z.record(z.string(), z.string().url()).default({}),
+    // Slug of the post that writes this project up. reference() fails the
+    // build if the post does not exist, so a renamed post cannot leave a
+    // dangling link. The reverse link on the post page is derived from this,
+    // so the relationship is declared once.
+    post: reference('posts').optional(),
     tags: z.array(z.string()).default([]),
     featured: z.boolean().default(false),
     order: z.number().default(999),

@@ -311,6 +311,29 @@ h3 { font-size: var(--s-lg); }
   margin-top: var(--sp-6);
 }
 
+/* Full-width media block: a video embed or a cover image.
+
+   Given more room than a text block on both sides. Media reads as a separate
+   object rather than part of the prose flow, and it needs the air to do that.
+   Declared after .masthead + * so it wins the top margin on equal
+   specificity; the bottom margin collapses with whatever follows, so the
+   content below never sits flush against it. */
+.media {
+  margin-block: var(--sp-7);
+}
+
+/* Tag list. Wraps rather than overflowing, so a long set never widens the
+   page. Used inline under a listing row and as a block under a project's
+   media. */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  font-size: var(--s-xs);
+  letter-spacing: 0.04em;
+  color: var(--fg-dim);
+}
+
 /* Wrapper for a group of <Row>. Supplies the leading hairline; each row
    draws its own trailing one. */
 .rows {

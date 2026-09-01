@@ -2,6 +2,10 @@
 
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{graphicx}
+% pdflatex resolves figures through this; pandoc ignores it and emits the
+% bare path, which the loader rewrites to <base>/figures/<path>.
+\graphicspath{{../../../public/figures/}}
 
 \title{Physically-based Rendering}
 % Listing subtitle and social preview. Not rendered in the post body.

@@ -2,11 +2,10 @@
 title: Example
 date: 2025-06-14
 blurb: This is an example project I did.
-cover: ./example.png
-video: /projects/example.mp4
+cover: ../../assets/projects/example/cover.png
+video: dQw4w9WgXcQ
 links:
   source: https://github.com/allocatedartist/example
-  writeup: https://allocatedartist.github.io/blog/example
 tags:
   - cpp
   - opengl

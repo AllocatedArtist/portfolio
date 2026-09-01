@@ -1,12 +1,14 @@
 ---
-import { getCollection, render } from 'astro:content'
+import { getCollection, getEntry, render } from 'astro:content'
 import Base from '../../layouts/Base.astro';
 import { longDate, machineDate } from "../../lib/date"
+import { withBase } from "../../lib/href"
+import YouTube from '../../components/YouTube.astro';
 
 export async function getStaticPaths() {
   const projects = await getCollection('projects');
   return projects.map(p => ({
-    params: { slug: p.id }, 
+    params: { slug: p.id },
     props: { project: p },
   }));
 }
@@ -14,8 +16,14 @@ export async function getStaticPaths() {
 const { project } = Astro.props;
 const { Content } = await render(project);
 
+// reference() guarantees the target exists, so a project that declares a post
+// can never produce a dangling link.
+const post = project.data.post ? await getEntry(project.data.post) : undefined;
+
+const links = Object.entries(project.data.links);
+const tags = project.data.tags;
 ---
-<Base title={project.data.title}>
+<Base title={project.data.title} description={project.data.blurb}>
   <header class="masthead">
     <h1>{project.data.title}</h1>
     <time class="meta"
@@ -24,7 +32,52 @@ const { Content } = await render(project);
     </time>
   </header>
 
+  {project.data.video && (
+    <div class="media">
+      <YouTube id={project.data.video} title={`${project.data.title} demo`} />
+    </div>
+  )}
+
+  {(tags.length > 0 || links.length > 0 || post) && (
+    <div class="details">
+      {tags.length > 0 && (
+        <div class="tags">
+          {tags.map(tag => <span>{tag}</span>)}
+        </div>
+      )}
+
+      {(links.length > 0 || post) && (
+        <p class="meta refs">
+          {post && (
+            <a class="link" href={withBase(`/posts/${post.id}`)}>writeup</a>
+          )}
+          {links.map(([label, url]) => (
+            <a class="link" href={url} rel="noopener" target="_blank">{label}</a>
+          ))}
+        </p>
+      )}
+    </div>
+  )}
+
   <div class="prose">
     <Content />
   </div>
 </Base>
+
+<style>
+  /* Sits between the media and the body. The top margin comes from either
+     .masthead + * or the .media bottom margin, so only the bottom is set
+     here and the rhythm is identical with or without a video. */
+  .details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+    margin-block-end: var(--sp-6);
+  }
+
+  .refs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-4);
+  }
+</style>

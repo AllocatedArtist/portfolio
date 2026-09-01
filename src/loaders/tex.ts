@@ -152,9 +152,38 @@ async function convert(file: string, root: string): Promise<Converted> {
 export interface TexLoaderOptions {
   /** Directory of .tex files, relative to the project root. */
   dir?: string;
+  /**
+   * Directory under public/ holding post figures. A relative <img src> in the
+   * pandoc output is rewritten to `<base>/<figures>/<src>`.
+   */
+  figures?: string;
 }
 
-export function texLoader({ dir = "src/content/posts" }: TexLoaderOptions = {}): Loader {
+/**
+ * Rewrite relative figure paths to absolute, base-prefixed URLs.
+ *
+ * pandoc emits whatever path the .tex wrote, verbatim: it does not resolve
+ * \graphicspath. A bare `src="pbr/lobe.png"` would otherwise resolve against
+ * the current page URL, so it would break differently on /posts/x/ than on a
+ * listing page, and would miss the /portfolio deploy base entirely.
+ *
+ * Absolute paths and full URLs are left alone.
+ */
+function rewriteFigures(html: string, base: string, figures: string): string {
+  const prefix = `${base.replace(/\/+$/, "")}/${figures.replace(/^\/+|\/+$/g, "")}`;
+  return html.replace(
+    /(<img\b[^>]*?\ssrc=")([^"]+)(")/gi,
+    (whole, head: string, src: string, tail: string) => {
+      if (/^([a-z][a-z0-9+.-]*:|\/\/|\/)/i.test(src)) return whole;
+      return `${head}${prefix}/${src.replace(/^\.\//, "")}${tail}`;
+    },
+  );
+}
+
+export function texLoader({
+  dir = "src/content/posts",
+  figures = "figures",
+}: TexLoaderOptions = {}): Loader {
   return {
     name: "tex-loader",
 
@@ -176,8 +205,10 @@ export function texLoader({ dir = "src/content/posts" }: TexLoaderOptions = {}):
           const digest = generateDigest(source);
           if (store.get(id)?.digest === digest) return;
 
-          const { data: raw, html, headings, warnings } = await convert(
+          const { data: raw, html: rawHtml, headings, warnings } = await convert(
             join(dir, `${id}.tex`), root);
+
+          const html = rewriteFigures(rawHtml, config.base ?? "/", figures);
 
           if (warnings) {
             // Almost always "Could not convert TeX math", which pandoc renders

@@ -25,6 +25,7 @@ const projects = await getCollection('projects');
           title={project.data.title}
           blurb={project.data.blurb}
           meta={year(project.data.date)}
+          tags={project.data.tags}
         />
       ))
     }

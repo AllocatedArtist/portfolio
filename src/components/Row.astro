@@ -26,9 +26,22 @@ interface Props {
   download?: boolean;
   /** Force new-tab behaviour on or off. Defaults to true for http(s) links. */
   newTab?: boolean;
+  /** Shown under the blurb, truncated to `maxTags`. */
+  tags?: string[];
+  /** How many tags a row shows before collapsing the rest into a count. */
+  maxTags?: number;
 }
 
-const { href, title, blurb, meta, icon, download, newTab } = Astro.props;
+const {
+  href, title, blurb, meta, icon, download, newTab,
+  tags = [], maxTags = 3,
+} = Astro.props;
+
+// A row is a scanning surface, so the tag list is capped rather than wrapped.
+// The remainder is surfaced as a count so it is clear something was elided
+// instead of the list just looking short.
+const shown = tags.slice(0, maxTags);
+const hidden = tags.length - shown.length;
 
 // A bare "https://" or "mailto:" is left alone by withBase, so external and
 // internal links can share this component.
@@ -55,6 +68,12 @@ const opensNewTab = newTab ?? (isHttp && !download);
     </span>
 
     {blurb && <span class="blurb">{blurb}</span>}
+    {shown.length > 0 && (
+      <span class="tags">
+        {shown.map((tag) => <span>{tag}</span>)}
+        {hidden > 0 && <span class="more">+{hidden}</span>}
+      </span>
+    )}
   </span>
   {meta && <span class="meta">{meta}</span>}
   {/* WCAG 3.2.5: a link that changes context should say so. The icon is
@@ -99,6 +118,14 @@ const opensNewTab = newTab ?? (isHttp && !download);
     margin-top: var(--sp-1);
     font-size: var(--s-sm);
     color: var(--fg-dim);
+  }
+
+  .tags {
+    margin-top: var(--sp-2);
+  }
+
+  .more {
+    opacity: 0.7;
   }
 
   .meta {
