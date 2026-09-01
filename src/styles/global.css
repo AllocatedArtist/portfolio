@@ -84,6 +84,21 @@
 *::before,
 *::after { box-sizing: border-box; }
 
+/* Backstop. Anything that escapes its container (a wide equation, a long
+   code line) must not make the *page* scroll sideways: on mobile that
+   widens the layout viewport, which mis-sizes the position:fixed nav and
+   crops the first item. `clip` is preferred because, unlike `hidden`, it
+   does not turn the root into a scroll container. Older engines that do
+   not know `clip` keep `hidden` from the line above. */
+html { overflow-x: hidden; }
+
+/* Split into @supports rather than two declarations in one block: the
+   minifier collapses same-property declarations and silently drops the
+   fallback, which would leave iOS < 16 with no backstop at all. */
+@supports (overflow-x: clip) {
+  html { overflow-x: clip; }
+}
+
 body,
 h1, h2, h3, h4,
 p, figure, blockquote, dl, dd,
@@ -382,8 +397,20 @@ h3 { font-size: var(--s-lg); }
 
 .prose math[display="block"] {
   display: block;
+  max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   padding-block: var(--sp-1);
+}
+
+/* Pandoc emits display math inline inside the paragraph that introduces it,
+   so the <p> is the real overflow container. Browsers honour `overflow` on
+   <math> inconsistently, so constrain the paragraph as well. :has() is
+   supported from Safari 15.4, which is older than the 16.4 the range media
+   syntax needed, so this does not narrow the support floor. */
+.prose p:has(> math[display="block"]) {
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /* Wide content must scroll inside its own container so the page body never

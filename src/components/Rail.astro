@@ -19,6 +19,11 @@ export interface RailItem {
   href: string;
   /** Extra path prefixes that count as "inside" this section. */
   match?: string[];
+  /**
+   * Phone-width label. Four full labels do not fit across a 320px bar, and
+   * the name is by far the longest. Defaults to `label`.
+   */
+  short?: string;
 }
 
 interface Props {
@@ -29,7 +34,7 @@ const DEFAULT_ITEMS: RailItem[] = [
   { label: "contact", href: "/contact" },
   { label: "writing", href: "/writing", match: ["/blogs"] },
   { label: "work", href: "/work", match: ["/projects"] },
-  { label: "seven flaminiano", href: "/" },
+  { label: "seven flaminiano", href: "/", short: "seven" },
 ];
 
 const { items = DEFAULT_ITEMS } = Astro.props;
@@ -59,7 +64,8 @@ const active = items.find(isCurrent);
         class:list={["rail-item", { name: item.href === "/" }]}
         aria-current={item === active ? "page" : undefined}
       >
-        <CursorText text={item.label} />
+        <span class="lbl lbl-full"><CursorText text={item.label} /></span>
+        <span class="lbl lbl-short"><CursorText text={item.short ?? item.label} /></span>
       </a>
     ))
   }
@@ -103,6 +109,8 @@ const active = items.find(isCurrent);
   .name {
     color: var(--fg);
   }
+
+  .lbl-short { display: none; }
 
   /* Phones: the vertical bar costs about a tenth of a 375px viewport and
      sideways text is genuinely harder to read, so the rail becomes a bottom
@@ -148,10 +156,15 @@ const active = items.find(isCurrent);
        that is ~220px, which clears a 320px viewport once padding and gaps
        are taken out. Shrink rather than overflow if a label grows: pass
        shorter `items` to <Rail> if you ever need to. */
+    /* Never squeeze. If labels ever outgrow the bar it should be obvious
+       in testing rather than silently clipping the first item. */
     .rail-item {
-      min-width: 0;
+      flex: 0 0 auto;
       white-space: nowrap;
     }
+
+    .lbl-full { display: none; }
+    .lbl-short { display: inline; }
   }
 
   @media (prefers-reduced-motion: reduce) {
