@@ -1,0 +1,272 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\title{Physically-based Rendering}
+\author{Seven Flaminiano}
+\date{2026-07-25}
+
+\begin{document}
+
+\maketitle
+\tableofcontents{}
+
+\section{PBR}
+\textbf{PBR} = Physically-based rendering. It's based on 3 ideas: microfacet-surface model, conservation of energy, and a physically-based BRDF (bidirectional reflectance distribution function).
+
+The reflectance equation expresses all these ideas:
+\[L_o = \int_{\Omega} f_r(p, w_i, w_o) * L_i(p, w_i) * n \cdot w_i * dw_i\]
+
+\subsection{Direct Lighting}
+
+The point \(p\) is effectively the fragment we're evaluating in our shader. 
+\(L_o\) is the outgoing radiance, \(f_r\) is the fresnel function, and \(L_i\) is the incoming radiance.
+\(p\) is the point the incoming light is hitting, \(w_o\) is the view direction, and \(n\) is the normal at that point.
+\(w_i\) refers to the solid angle, a measure of a patch of surface on a sphere expressed in terms of an angle.
+It's confusing, but we're splitting up the hemisphere (what we're integrating over, explained below) into very small patches (measured by the solid angle)
+and evaluating the incoming radiance at each of those patches. Since it's an integral, we make those patches infiniteismally small (to a single point in space). This effectively makes
+\(w_i\) the incoming light direction. The integral is over the hemisphere about our point's normal. For direct lighting,
+it's quite easy to approximate the integral as you are just summing the contribution of all the known light sources in your scene. If you take an object, and then every single light in the scene that 
+hits it, there's really only one ray from each light that has any incoming radiance that affects any given point of the object. All other rays coming from the light don't directly hit
+the point, and can be assumed to have a radiance of \(0\) for simplification. The incoming radiance \(L_i\) is scaled by \(n \cdot w_i\) to account for the distribution of light at varying angles. 
+Put simply, the light is stronger when it hits a surface head on, compared to when it hits it at an angle. So, for direct lighting, 
+it's as simple as iterating through every light source in the scene, running our BRDF, and accumulating the results in our final outgoing radiance.
+
+The BRDF in the reflectance equation scales the incoming radiance based on the material's current properties. 
+In other words, it determines how each incoming light ray contributes to the surface's final reflected light.
+Here's the equation for the Cook-Torrance BRDF model (which is what a lot of engines use):
+\[f_r = k_D * f_{\text{lambert}} + k_S * f_{\text{cook-torrance}}\]
+This is where the conservation of energy comes in. You see, \(k_D\) and \(k_S\) represent 
+weights for diffuse lighting and specular lighting respectively. \(k_D + k_S = 1\), because the sum of diffuse
+lighting (refracted) and specular lighting (reflected) must not exceed the energy of incoming light. Of course, the BRDF
+is a little bit more complicated than this. For diffuse lighting we use the lambertian model, and it's quite simple thankfully:
+\[f_{\text{lambert}} = \frac{c}{\pi}\]
+where \(c\) is the diffuse color of the object. Now where does that \(\pi\) come from? 
+Well let's look at the integral just for diffuse: 
+\[\int_{\Omega} p_d * L_i * n \cdot w_i * dw_i\] 
+where \(p_d\) is the surface albedo. Conservation of energy states that the outgoing energy cannot exceed the incoming energy, so:
+\[\int_{\Omega} p_d * L_i * n \cdot w_i * dw_i \leq L_i\] 
+The surface albedo and incoming radiance are constants in this equation so move them out:
+\[p_d * L_i * \int_{\Omega} n \cdot w_i * dw_i \leq L_i\]
+Then divide both sides by the incoming radiance, and, since the normal and incoming light direction are unit vectors, substitute it for the cosine 
+of the angle between them (\(\theta\)):
+\[p_d * \int_{\Omega} \cos(\theta) * dw_i \leq 1\]
+Finally replace expand the integral to a double integral over the hemisphere in terms of the polar angle \(\theta\) and azimuth \(\phi\):
+\[p_d * \int_{\Phi = 0}^{2\pi} \int_{\theta = 0}^{\frac{\pi}{2}} \sin(\theta)\cos(\theta)d\theta d\phi \leq 1\]
+Note that the sine function accounts for how the patches (solid angle) get "thinner" as you move up the hemisphere and effectively converge to
+a single point. Now let's solve this integral. Evaluate the inner first:
+\[\int_{\theta = 0}^{\frac{\pi}{2}} \sin(\theta)\cos(\theta)d\theta = -\frac{1}{2}{\cos}^2(\theta) \Big|_0^\frac{\pi}{2} = \frac{1}{2}\]
+Then the outer:
+\[p_d * \int_{\Phi = 0}^{2\pi} \frac{1}{2} d\phi = \pi \]
+So:
+\[p_d * \pi \leq 1\]
+Now let's say that \(p_d\) or \(c\), the surface albedo, is \(0.5\).
+Then clearly \(\frac{\pi}{2} > 1\) which violates the conservation of energy. This is why
+we divide the surface albedo by \(\pi\): to normalize diffuse contribution.
+The specular term is a little bit more involved though:
+\[f_{\text{cook-torrance}} = \frac{D*F*G}{4*(w_i \cdot n)*(w_o \cdot n)}\]
+where \(D\) is the normal distribution function, \(F\) is the fresnel function, and \(G\) is the geometry function.
+The normal distribution function approximates how many microfacet surfaces are aligned to the halfway vector given the
+material's roughness. It's responsible for creating highlights as it's contribution is strong at points where the normal aligns with the halfway vector, and weak pretty much
+everywhere else. Without it, there would be no highlights (no reflected light, or specular). It's the primary function simulating the microfacet surface model. 
+The geometry function describes the self shadowing property of rough surfaces at different viewing directions. At certain angles, microfacet surfaces will overshadow other surfaces which reduces the amount of light reflected.
+It counteracts the sharp specular effects of grazing angles (along the object's outline) where the specular BRDF denominator would approach 0 by reducing the numerator at the same rate. Especially because microfacet surfaces 
+greatly overshadow each other at grazing angles. It's absence would also allow hard shading cutoffs in surfaces the light doesn't hit head on. It's responsible for a gradual dimming of specular lighting as you move away from the area of impact (and more surfaces occlude each other).
+Finally, the fresnel function calculates the ratio of reflected light to refracted light at varying surface angles. When looking at a surface head on, there's very little reflectance compared to looking at it from an angle (when the surface starts to move away from you).
+Viewing a surface at a perfectly perpendicular angle, you get a theoretical \(100\%\) reflectance. An important term of fresnel is \(F0\) which is the reflectance at normal incidence (looking straight down at the normal). This is when reflectance is at its lowest. As you move at higher angles,
+to a perpendicular angle, reflectance increases to its theoretical maximum. For dialetrics (non-metals) the average \(F0\) and our approximation for ALL dialetrics will be 0.04 which is very low reflectance at an incident angle. For conductors (metals)
+the average F0 is much higher, and for our purposes, it's simply the albedo of the material (given that all refracted light in a metal gets absorbed, and thus no diffuse on a metal).
+
+\subsection{Diffuse Irradiance}
+
+Direct lighting makes a great visual improvement, but it doesn't take into account
+that light bouncing off of other surfaces or (light coming from the background), can contribute to the current surface's
+appearance. This is indirect lighting. We'll first look at indirect diffuse lighting which will influence the ambient term.
+And unlike direct lighting, all incoming light directions across the surface hemisphere do contribute radiance. This means we will
+have to integrate across the whole hemisphere unlike direct lighting, where we simply summed the contribution of one ray per light source.
+But, in order to make this effective real-time, we precompute the irradiance per surface normal. The irradiance takes into account all incoming light
+directions over the hemisphere of integration. We store the precomputed irradiance into a cubemap that we sample in our final PBR fragment shader.
+
+For environment maps, we generally use an HDR map (which means our cubemap texture will have to store floating point data) for the best results.
+The HDR map usually comes in the form of an equirectangular map which requires a conversion step to a cubemap. To convert, I used a framebuffer, and swapped
+out the color attachment per face of the cubemap, and rendered to the framebuffer with a camera (different view matrices per face, and a 90 FOV projection matrix).
+With a shader, you can convert from cartesian coordinates (of the current cube texel being evaluated) to spherical coordinates and sample the equirectangular texture.
+To calculate the irradiance map from the environment map (I'll call it HDR map from now on, and at this point it should be a cubemap), you 
+need to convolute it. That is, for a given hemisphere, you sample all incoming light directions (this is translated to texels in the HDR map), 
+and average their contribution. If we look at our expanded reflectance equation (note: \(k_S\) is implicitly in \(F\)):
+\[\int_{\Omega} (k_D*\frac{c}{\pi} + \frac{DGF}{4(n\cdot{w_i})(n\cdot{w_o})}) * L_i * n\cdot{w_i}dw_i\]
+We can split the equation by the diffuse BRDF and the specular BRDF. I'll show the diffuse BRDF for now:
+\[\int_{\Omega} k_D*\frac{c}{\pi} * L_i * n\cdot{w_i}dw_i \]
+You'll notice that the lambertian diffuse is constant over the integral:
+\[k_D * \frac{c}{\pi} * \int_{\Omega} L_i * n\cdot{w_i}dw_i\]
+Now, we have to evaluate this integral discretely, so let's first convert this
+to a double integral (like when we were proving \(\frac{c}{\pi}\)):
+\[k_D * \frac{c}{\pi} * \int_{\phi = 0}^{2\pi} \int_{\theta = 0}^{\frac{\pi}{2}} L_i\cos(\theta)\sin(\theta) d\theta d\phi\]
+To something a little more discrete:
+\[k_D * \frac{c}{\pi} * \sum^{N_1}\sum^{N_2} L_i\cos(\theta) * \sin(\theta) * (\frac{\pi}{2*N_2}) * (\frac{2\pi}{N_1})\]
+\[k_D * \frac{c}{\pi} * (\frac{\pi}{2*N_2}) * (\frac{2\pi}{N_1}) * \sum^{N_1}\sum^{N_2} L_i\cos(\theta)\sin(\theta)\]
+\[k_D * c *\frac{\pi}{N_1  N_2} * \sum^{N_1}\sum^{N_2} L_i\cos(\theta)\sin(\theta)\]
+where \(N_1\) and \(N_2\) are the discrete sample sizes for \(\phi\) and \(\theta\) respectively.
+For the computation of the irradiance map you can leave out \(k_D\) and \(c\) as you'll have access to that 
+in the final PBR shader when sampling the irradiance map. Now the calculation of the ambient term from indirect diffuse lighting is 
+quite simple. 
+\begin{verbatim}
+  vec3 k_D = (vec3(1.0f) - fresnelSchlickRoughness(...));
+  k_D*=(1.0 - metallic);
+  vec3 albedo = surfaceColor;
+  vec3 irradiance = texture(irradianceMap, normal).rgb;
+  vec3 ambient = k_D * albedo * irradiance;
+\end{verbatim}
+You want to take roughness into account (indirect lighting follows the same properties
+as direct lighting), otherwise indirect lighting reflects too strongly at grazing angles
+on rough dialectrics. Now, just a couple things that messed me up:
+\begin{enumerate}
+  \item Make sure you're using the right coordinate system.
+        In my case it's right-handed, but my math library GLM was
+        assuming left-handed. This flipped my cubemap on the X-faces and drove me nuts.
+  \item Generate mipmaps for the HDR map and change the LOD to get better results
+        for the irradiance map (sample at a higher mip level). This combats
+        hdr maps with really bright areas which causes spikes in the irradiance map
+        that doesn't look good when mapped to the ambient term. Do this before 
+        increasing the sample count (decreasing the sampling delta).
+\end{enumerate}
+
+\subsection{Specular IBL}
+
+Now the ambient specular term is what helps metals actually start to look like metals
+because we get cool reflections from the environment map. Let's look at the specular BRDF's 
+integral (if you remember, we split the reflectance equation in terms of the diffuse BRDF and the specular BRDF):
+\[\int_{\Omega} f_r * L_i * n\cdot w_i dw_i\]
+The problem is that the integral is not only dependent on the incoming light direction,
+but also the view direction (for fresnel). The addition of an extra dependence changes how we
+evaluate this integral. Let's split it up first:
+\[\int_{\Omega} L_i dw_i * \int_{\Omega} f_r * n\cdot w_i dw_i\]
+
+We now solve for these 2 integrals separately, which is a technique known 
+as split-sum approximation. The first integral with the fresnel is solved for 
+with another precomputed cubemap (called the prefiltered environment map). To first 
+calculate the prefiltered environment map, we make a simplifying assumption that the viewing direction is
+equivalent to the normal that we're integrating our hemisphere around. This does mean our reflections are slightly inaccurate 
+at grazing angles, but the results are convincing enough that it doesn't really matter (a small price to pay for good runtime performance).
+
+So how do we calculate the prefiltered environment map? Well, we're gonna use quasi-Monte Carlo integration to approximate the integral (because
+we're going to use a low discrepency sequence to generate random sampling vectors). The reason we won't uniformly generate sampling vectors around the hemisphere
+like we did for the irradiance map is because of roughness. When calculating reflections, only vectors within a specular lobe would be outgoing. The size of that
+specular lobe depends on the roughness of the surface. A smoother surface would have a smaller specular lobe (as light more closely reflects around the halfway vector)
+while a rougher surface has a larger specular lobe (reflecting light isn't as aligned to the halfway vector). Given that we only care about vectors within
+the specular lobe, we can discard all other vectors outside it. We can bias our sampling vectors to within the specular lobe with importance sampling. By tweaking
+the sampling size of our Monte Carlo integrator, we can get more accurate results (but the benefit of Monte Carlo integration is that you can get good results with a 
+small sample size).
+
+For my project, I used a hammersley sequence to generate random vectors. Then, you modify the random vector by orienting it around the sampling normal
+and biasing it towards the specular lobe based on the surface roughness. That's the importance sampling part. Note: the prefiltered environment map has multiple mip levels
+per roughness value. Higher roughness translates to higher mip levels which means blurrier reflections. We can increase the quality of our prefiltered environment map
+by sampling a mip of the HDR map based on our PDF (probability-density function) and roughness level. This helps create smoother prefiltered environment maps, especially when your
+environment has varying intensity levels of light.
+
+Creating the irradiance map and the prefiltered environment map is quite similar, save for the varying mip levels for the prefiltered map. It follows
+in this order:
+\begin{enumerate}
+  \item Generate sampling points around hemisphere of integration (hemisphere is about the surface normal)
+  \item Accumulate the color from the hdr map
+\end{enumerate}
+
+The difference is the way those sample points are generated. For the irradiance map, it's sufficient to generate points in a uniform grid across
+the hemisphere. We express these points in terms of \(\theta\) and \(\phi\). We can convert these spherical coordinates into their cartesian equivalent:
+\((\sin(\theta)*\cos(\phi), \sin(\theta)*\sin(\phi), \cos(\theta))\). Then use a change of basis where the normal vector is the up vector (because the upper hemisphere 
+is centered around the normal), and compute the tangent and bitangent (other columns of the matrix) with the normal vector using cross products. Just make sure the initial bitangent
+vector you use to compute tangent with the normal is not parallel to the normal (obviously). Now for the prefiltered map, you use importance sampling (with random monte carlo points)
+to generate sampling vectors reflecting off the specular lobe as they contribute the most to reflection. Also, you must check that the light direction in the prefiltered calculation 
+(the light direction is what the final sampling vector becomes) is not occluded by the surface. For the irradiance map you don't need to do this as all generated points are above the hemisphere
+and they are the light direction. For the prefiltered map, you reflect the importance sampled point to produce the light direction. For really rough surfaces, if that importance sampled point 
+is at a wide angle from the normal, the reflected vector (light direction) could potentially be behind geometry. Another important thing to note is that there is an implicit integral in calculating our prefiltered map. When running through our samples, we accumulate the prefiltered color like so:
+\begin{verbatim}
+  // You actually want to sample with mip level
+  // too so your prefilter map is smoother. 
+  // Not added here for simplicity.
+  prefilterColor += texture(hdrMap, lightDir) * NdotL;
+  totalWeight += NdotL;
+\end{verbatim}
+and then, to get the average, you normalize by the accumulated weight: 
+\begin{verbatim}
+  prefilterColor /= totalWeight;
+\end{verbatim}
+Notice that unlike the irradiance map, we're not dividing by the sample count which means that the total weight is itself another evaluated integral (Monte Carlo evaluated). Let's look at the prefilter integral as a sum:
+\[\frac{1}{N} * \sum_{k=1}^{N} L_i(l_k)\]
+The cosine weighting isn't part of the integral, but it's attached because it's found to have produced better results (noted by Karis in his 2013 UE4 PBR paper). So you get:
+\[\frac{\sum_{k=1}^{N} L_i(l_k) * \cos(\theta)}{\sum_{k=1}^{N} \cos(\theta)}\]
+The cosine weighting is really an evaluation over the solid angle \(dw_i\), and since we're dividing both integrals, \(dw_i\) cancels out. This leaves us with radiance, not irradiance. In short: the prefiltered map is a radiance map. One note that messed me up was setting the mip count too high. For my implementation I use a base size of \(128 \times 128\) for the base cubemap faces. The maximum amount of mip levels you can have is then \(\log_2(128) + 1 = 8\). I made the mistake of allocating more mip levels than what was possible for a \(128x128\) texture which produced an invalid texture. So if you want the maximum amount of mip levels for your texture size, make sure you run the maths first.
+
+Now the second part of specular IBL is the BRDF LUT (look-up texture). Unlike the prefiltered environment map, you only have to precompute the BRDF LUT once as it's not dependent on any one hdr map. If you look at the integral that the BRDF LUT is evaluating, you'll see that there's no \(L_i\) term, so no hdr map dependence. So, let's look at what we have to integrate, and know that we use the same monte carlo integration method we used for the prefiltered environment map.
+\[\int_{\Omega} f_r * n \cdot w_i dw_i\]
+We'll split this integral into two parts, a scale for \(F_0\) and a bias. Here's how we do it:
+\[\int_{\Omega} f_r * \frac{F}{F} * n \cdot w_i dw_i\]
+where \(F\) is the fresnel function of the specular BRDF (\(f_r\)).
+\[\int_{\Omega} \frac{f_r}{F} * F * n \cdot w_i dw_i\]
+We replace the right most \(F\) with the fresnel schlick approximation.
+\[\int_{\Omega} \frac{f_r}{F} * (F_0 + (1 - F_0)(1 - n \cdot h)^5) * n \cdot w_i dw_i\]
+And to make it clearer on how we'll split the integral, I'll replace \((1 - n \cdot h)^5\) with \(\alpha\).
+\[\int_{\Omega} \frac{f_r}{F} * (F_0 + (1 - F_0)\alpha) * n \cdot w_i dw_i\]
+\[\int_{\Omega} \frac{f_r}{F} * (F_0 + \alpha - F_0 * \alpha) * n \cdot w_i dw_i\]
+\[\int_{\Omega} \frac{f_r}{F} * (F_0(1 - \alpha) + \alpha) * n \cdot w_i dw_i\]
+\[\int_{\Omega} \frac{f_r}{F} * (F_0)(1 - \alpha) * n \cdot w_i dw_i + \int_{\Omega} \frac{f_r}{F} * \alpha * n \cdot w_i dw_i\]
+Remember that \(f_r\) has the \(F\) term in the numerator, so it cancels out with the denominator's \(F\).
+\[\int_{\Omega} f_r * (F_0)(1 - \alpha) * n \cdot w_i dw_i + \int_{\Omega} f_r * \alpha * n \cdot w_i dw_i\]
+And, since \(F_0\) is a constant over the integral we can pull it out. It's not part of the BRDF LUT calculation, 
+instead we add it in the PBR shader like this:
+\begin{verbatim}
+  vec2 envBRDF = texture(
+    brdfLUTMap, 
+    vec2(
+      max(dot(N, V), 0.0), 
+      roughness
+    )
+  ).xy;
+  vec3 specular = prefilteredColor;
+  specular += (F*envBRDF.x + envBRDF.y);
+\end{verbatim}
+Note that \(F\) is what you get from running fresnel
+schlick with your material's current roughness, \(F_0\), etc. The reason we use \(F\) instead of \(F_0\) is because with rougher surfaces, we don't want overly bright grazing angles. This would make rougher dialetrics appear much brighter at the sides than they should actually be. It's the same reason we take into account roughness with fresnel schlick in calculating indirect diffuse (there also isn't a single halfway direction vector to run fresnel on). Just a couple notes about generating the LUT:
+\begin{enumerate}
+  \item It takes two parameters: \(N \cdot V\), and varying roughness. The first parameter is along the x-axis, while the second is along the y-axis.
+  \item The LUT only needs floating point RG values as R represents the scale and G represents the bias of \(F_0\).
+  \item You generate the view direction from \(N \cdot V\) like this: 
+    \begin{enumerate}
+      \item \(x = \sqrt{1 - (N \cdot V)^2}\)
+      \item \(y = 0\)
+      \item \(z = N \cdot V\)
+    \end{enumerate}
+    This works because we assume the normal to be \(+Z\).  
+  \item You only need to evaluate the geometry function in the integral because \(F\) drops out as shown above and \(D\) is cancelled out by the probability density function (the importance sampling) that we use to generate our sampling vector.
+\end{enumerate}
+Now, sample the prefiltered environment map, and the BRDF LUT in the fragment shader to obtain your indirect specular lighting and you'll have yourself some nice
+reflections!
+
+\subsection{Multiscattering IBL}
+Our current model is all well and good, but it only takes into account single scattering! The problem is that as our material gets rougher, the surface gets much darker, and we lose a lot of energy. But light scatters several times across a surface, and accounts for more of the reflected energy when a material gets rougher. So, we don't want to lose energy with rougher surfaces. How do we solve this? Ok so for conservation of energy, the total amount of energy reflected must be equal to the incident energy (incoming light):
+\[E_{ss} + E_{ms} = 1\]
+where \(E_{ss}\) is single scattering energy and \(E_{ms}\) is multi-scattering energy. Let's assume that our surface is completely smooth, \(F = 1\), and that it's a metal (no diffuse). Then \[E_{ss} = \int_{\Omega} \frac{DG}{4(n \cdot w_i)(n \cdot w_o)} * n \cdot w_i dw_i\] 
+Should be familiar, but \(F = 1\). Now let's solve for \(E_{ms}\):
+\[E_{ms} = 1 - E_{ss} = \int_{\Omega} f_{ms} * n \cdot w_i dw_i\]
+\(f_{ms}\) is a BRDF for multiscattering, one that we (or at least I) don't know. But we'll update our reflectance equation with the new BRDF anyways:
+\[\int_{\Omega} (f_{ss} + f_{ms}) * L_i * n \cdot w_i dw_i\]
+\[\int_{\Omega} f_{ss} * L_i * n \cdot w_i dw_i + \int_{\Omega} f_{ms} * L_i * n \cdot w_i dw_i\]
+Ok, so nothing new. At least we know how to evaluate the left integral. But what about the right? It turns out we can approximate the effect of secondary scattering to be mostly diffuse. So we can use our irradiance map to solve for \(L_i\). Let's substitute the irradiance map in, and make \(E_{ms}\) in terms of \(E_{ss}\):
+\[\approx (1 - E_{ss}) * \frac{1}{\pi} * \int_{\Omega} L_i n \cdot w_i dw_i\]
+Now our new \(L_o\) for a perfectly smooth metal is:
+\[L_o = (f_a + f_b) * \textbf{radiance} + (1 - E_{ss}) * \textbf{irradiance}\]
+where \(f_a\) and \(f_b\) are the scale and bias from our BRDF LUT.
+But to handle any metal then we need \(F\) back:
+\[F_{ss}E_{ss} + F_{ms}E_{ms} = E\]
+And we're gonna need \(E_{avg}\) and \(F_{avg}\) which I need to read a paper on to understand:
+\[E_{avg} = E_{ss}, F_{avg} = F_0 + \frac{1}{21}(1 - F_0)\]
+Now our \(L_o\) for all metals:
+\[(F_0*f_a + f_b)*\textbf{radiance} + \frac{(F_0*f_a + f_b)*F_{avg}}{1 - F_{avg}(1 - E_{ss})}(1 - E_{ss}) * \textbf{irradiance}\]
+At the moment of writing this for the first time, I don't quite understand that second part (it's \(F_{ms}E_{ms}\)). But I trust that it works, which it seems to do in the final implementation. Let's introduce diffuse now so we can get good dialectrics:
+\[E_{\textbf{diff}} = c * (1 - F_{ss}E_{ss} - F_{ms}E_{ms}) * (1.0 -\textbf{metallic}) * \textbf{irradiance}\]
+where \(c\) is our albedo color. And our final IBL ambient lighting is:
+\[E = F_{ss}E_{ss} + F_{ms}E_{ms} + E_{\textbf{diff}} = 1\]
+The calculation of the ambient diffuse term is very similar to what we covered in the \textbf{Diffuse irradiance} section, but we now subtract the energy from multiscattering. This makes our ambient diffuse term hold up much better in terms of conservation of energy!
+
+\end{document}
