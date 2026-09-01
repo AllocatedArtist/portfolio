@@ -1,7 +1,61 @@
 ---
 import Base from "../layouts/Base.astro";
 import Row from "../components/Row.astro";
+import { site, icon } from "../lib/site";
+
+const links = [
+  {
+    icon: icon.email,
+    title: "email",
+    href: `mailto:${site.email}`,
+    meta: site.email,
+  },
+  {
+    icon: icon.linkedin,
+    title: "linkedin",
+    href: site.linkedin,
+    // Show the handle, not the whole URL, which would overflow on a phone.
+    meta: `/in/${site.linkedin.replace(/\/+$/, "").split("/in/")[1] ?? ""}`,
+  },
+  {
+    icon: icon.github,
+    title: "github",
+    href: site.github,
+    meta: `@${site.github.replace(/\/+$/, "").split("/").pop()}`,
+  },
+];
 ---
 
-<Base title="contact">
+<Base
+  title="Contact"
+  description={`Get in touch with ${site.name}, ${site.role.toLowerCase()}.`}
+>
+  <header class="masthead">
+    <h1>Contact</h1>
+    <p class="lede">Open to graphics and engine work.</p>
+  </header>
+
+  <p class="note">
+    Corrections on posts are welcome. For work, I'm most useful on renderers,
+    engine internals, and graphics tooling.
+  </p>
+
+  <div class="rows">
+    {links.map((l) => <Row {...l} />)}
+
+    <Row
+      icon={icon.resume}
+      title="resume"
+      href={site.resume}
+      meta="pdf"
+      download
+    />
+  </div>
 </Base>
+
+<style>
+  /* .masthead + * supplies the gap above; this is the gap down to the links. */
+  .note {
+    margin-bottom: var(--sp-6);
+  }
+</style>
