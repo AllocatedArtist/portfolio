@@ -22,7 +22,7 @@ for (const f of files) {
   if (!title) throw new Error(`${src}: missing \\title`);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date))
     throw new Error(`${src}: \\date must be literal YYYY-MM-DD, got "${date}"`);
-  const html = pandoc([src, '-f', 'latex', '-t', 'html5', '--mathml']);
+  const html = pandoc([src, '-f', 'latex', '-t', 'html5', '--mathml', '--shift-heading-level-by=1', '--toc', '--standalone', '--template=scripts/post.tpl']);
   writeFileSync(join(OUT, `${slug}.json`), JSON.stringify({ title, date, html }));
   console.log(`ok ${slug}  ${date}  ${title}`);
 }
