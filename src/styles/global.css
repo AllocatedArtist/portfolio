@@ -1,0 +1,477 @@
+/* ---------------------------------------------------------------------------
+   Portfolio design system.
+
+   Subset of ZedMono Nerd Font Mono (SIL OFL, see public/fonts/LICENSE.md).
+   Covers Latin-1, general punctuation, arrows, math operators, box drawing,
+   block elements, geometric shapes, and nine Nerd Font icon glyphs. If you
+   need a glyph outside that range, re-run the subset rather than swapping in
+   the full 2.7MB face.
+--------------------------------------------------------------------------- */
+
+@font-face {
+  font-family: "ZedMono";
+  src: url("/fonts/zedmono-regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ZedMono";
+  src: url("/fonts/zedmono-medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---------------------------------------------------------------------------
+   Tokens
+--------------------------------------------------------------------------- */
+
+:root {
+  /* Palette. Neutrals are tinted toward the accent hue (268deg) at low
+     saturation, so they read as chosen rather than as generic grey. */
+  --bg:      #0A080C;  /* hsl(268 18% 4%)  */
+  --fg:      #CCC6D2;  /* hsl(268 11% 80%) — 11.9:1 on --bg */
+  --fg-dim:  #7F758A;  /* hsl(268 8% 50%)  —  4.6:1 on --bg, AA at body size */
+  --accent:  #A680D0;  /* hsl(268 46% 66%) —  6.3:1 on --bg */
+  --rule:    rgb(204 198 210 / 0.10);
+
+  /* Type scale: 20px base, 1.25 ratio, each step rounded to whole pixels.
+     Sizes come only from this scale. */
+  --s-xs:  13px;
+  --s-sm:  16px;
+  --s-md:  20px;
+  --s-lg:  25px;
+  --s-xl:  31px;
+  --s-2xl: 39px;
+  --s-3xl: 49px;
+
+  /* Spacing. Deliberately NOT derived from the type ratio: two competing
+     geometric progressions in one stylesheet drift apart. */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+  --sp-9: 96px;
+
+  /* Layout */
+  --rail:    46px;   /* width of the fixed vertical nav */
+  --col:     46%;    /* content column, leaves the right side to the shader */
+  --measure: 62ch;   /* prose line length */
+  --scrim:   0.8;    /* opacity of --bg over the shader, for legibility */
+
+  --font:      "ZedMono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-math: math, ui-serif, Georgia, serif;
+
+  color-scheme: dark;
+}
+
+/* ---------------------------------------------------------------------------
+   Reset
+--------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+body,
+h1, h2, h3, h4,
+p, figure, blockquote, dl, dd,
+ul, ol { margin: 0; }
+
+ul[class], ol[class] { list-style: none; padding: 0; }
+
+img, svg, video, canvas { display: block; max-width: 100%; }
+
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: var(--s-md);
+  font-weight: 400;
+  line-height: 1.65;
+  font-synthesis: none;   /* no italic loaded, and no faked bold */
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a { color: inherit; text-decoration: none; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* ---------------------------------------------------------------------------
+   Shell
+
+   The content column is pinned left rather than centred. A fullscreen
+   raymarch puts its subject and its highest contrast in the middle of the
+   viewport, which is exactly where centred text would sit. Holding the
+   column to the left keeps text off the busy region and leaves the right
+   side of the screen for the shader to be seen.
+--------------------------------------------------------------------------- */
+
+.shell {
+  padding-block: clamp(28px, 5vh, 56px) 25vh;
+  padding-inline: clamp(20px, 4vw, 64px) 0;
+  padding-inline-start: calc(var(--rail) + clamp(18px, 3vw, 44px));
+}
+
+.col {
+  width: var(--col);
+  min-width: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Background
+--------------------------------------------------------------------------- */
+
+.bg-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -2;
+}
+
+/* Flat wash of --bg over the shader. This is the legibility budget: without
+   it, dim text fails contrast against the shader's bright regions. */
+.bg-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--bg);
+  opacity: var(--scrim);
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Terminal block cursor
+
+   The first character of a nav item or row title is wrapped in .cur at build
+   time. The block is an absolutely positioned ::before filling that single
+   character cell, so it lands correctly in both horizontal text and the
+   rail's vertical writing mode without any per-axis maths.
+--------------------------------------------------------------------------- */
+
+.cur {
+  position: relative;
+  z-index: 0;
+  display: inline-block;
+  line-height: 1.25;
+}
+
+.cur::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  z-index: -1;
+  opacity: 0;
+}
+
+[aria-current] .cur::before,
+.row:hover .cur::before,
+.row:focus-visible .cur::before {
+  animation: cursor-block 1.06s steps(1) infinite;
+}
+
+[aria-current] .cur,
+.row:hover .cur,
+.row:focus-visible .cur {
+  animation: cursor-ink 1.06s steps(1) infinite;
+}
+
+@keyframes cursor-block {
+  0%, 49.9%  { opacity: 1; }
+  50%, 100%  { opacity: 0; }
+}
+
+@keyframes cursor-ink {
+  0%, 49.9%  { color: var(--bg); }
+  50%, 100%  { color: inherit; }
+}
+
+/* ---------------------------------------------------------------------------
+   Type
+--------------------------------------------------------------------------- */
+
+h1, h2, h3 {
+  font-weight: 500;
+  line-height: 1.18;
+  text-wrap: balance;
+}
+
+h1 { font-size: var(--s-2xl); letter-spacing: -0.01em; }
+h2 { font-size: var(--s-xl); }
+h3 { font-size: var(--s-lg); }
+
+.lede {
+  color: var(--fg-dim);
+  font-size: var(--s-lg);
+  line-height: 1.5;
+  max-width: 44ch;
+}
+
+.eyebrow {
+  font-size: var(--s-xs);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+
+.meta {
+  font-size: var(--s-sm);
+  color: var(--fg-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.stack { display: flex; flex-direction: column; }
+
+/* Header block for a detail route: title, date, tags, closed with a single
+   hairline before the body.
+
+   A border rather than an <hr> on purpose. <hr> is a thematic break in the
+   content itself, so it lands in the accessibility tree as a section change
+   that isn't really there. This is a layout boundary, so it should be a
+   border on the thing it bounds and stay invisible to assistive tech.
+
+   This is the "at most one hairline rule" allowance spent for the page. */
+.masthead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: clamp(24px, 6vh, 64px);
+  padding-bottom: var(--sp-5);
+  border-bottom: 1px solid var(--rule);
+}
+
+/* Body that follows a .masthead. Keeps the gap in one place so every detail
+   route spaces its content identically. */
+.masthead + * {
+  margin-top: var(--sp-6);
+}
+
+/* Wrapper for a group of <Row>. Supplies the leading hairline; each row
+   draws its own trailing one. */
+.rows {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--rule);
+}
+
+.link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+}
+
+.link:hover { text-decoration-thickness: 2px; }
+
+/* ---------------------------------------------------------------------------
+   Prose
+
+   Applies to rendered markdown (<Content />) and to set:html output from the
+   pandoc pipeline. Scoped component CSS cannot reach generated HTML, so
+   these rules live here in the global sheet.
+--------------------------------------------------------------------------- */
+
+.prose {
+  max-width: var(--measure);
+}
+
+.prose > * + * { margin-top: 1.1em; }
+
+.prose p { line-height: 1.75; }
+
+.prose h2 { margin-top: 1.8em; }
+.prose h3 { margin-top: 1.6em; }
+
+.prose a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+}
+
+.prose a:hover { text-decoration-thickness: 2px; }
+
+.prose ul,
+.prose ol { padding-inline-start: 2ch; }
+
+.prose li + li { margin-top: 0.4em; }
+
+.prose code {
+  font-size: 0.9em;
+  color: var(--accent);
+}
+
+.prose pre {
+  padding: var(--sp-4);
+  border: 1px solid var(--rule);
+  background: var(--bg);
+  font-size: var(--s-sm);
+  line-height: 1.55;
+  overflow-x: auto;
+}
+
+.prose pre code {
+  font-size: inherit;
+  color: inherit;
+}
+
+.prose blockquote {
+  padding-inline-start: var(--sp-4);
+  border-inline-start: 1px solid var(--rule);
+  color: var(--fg-dim);
+}
+
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin-block: var(--sp-7);
+}
+
+.prose figure { margin: 0; }
+
+.prose figcaption {
+  margin-top: var(--sp-2);
+  font-size: var(--s-sm);
+  color: var(--fg-dim);
+}
+
+.prose img {
+  border: 1px solid var(--rule);
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--s-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.prose th,
+.prose td {
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--rule);
+  text-align: start;
+}
+
+.prose th { font-weight: 500; }
+
+/* MathML renders in the browser's math font regardless of --font, so posts
+   are inherently two-faced. Forcing the mono face here breaks fraction bars
+   and limit positioning; letting the math font win is the lesser evil. */
+.prose math { font-family: var(--font-math); font-size: 1.05em; }
+
+.prose math[display="block"] {
+  display: block;
+  overflow-x: auto;
+  padding-block: var(--sp-1);
+}
+
+/* Wide content must scroll inside its own container so the page body never
+   scrolls sideways. */
+.prose > pre,
+.prose > table,
+.prose > .overflow { overflow-x: auto; }
+
+/* ---------------------------------------------------------------------------
+   Table of contents
+
+   Emitted by pandoc via scripts/post.tpl, so it arrives inside the same
+   set:html string as the body and therefore lands inside .prose. These
+   rules must come AFTER the .prose block: the selectors have equal
+   specificity to .prose ul / .prose a, so source order is what wins.
+--------------------------------------------------------------------------- */
+
+.toc {
+  margin-bottom: var(--sp-7);
+  font-size: var(--s-sm);
+}
+
+.toc #toc-label {
+  margin-bottom: var(--sp-3);
+}
+
+.toc ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+/* Nested levels indent by two characters, which in a monospace face is an
+   exact, predictable step rather than an arbitrary rem value. */
+.toc ul ul {
+  margin-top: var(--sp-2);
+  padding-inline-start: 2ch;
+}
+
+.toc li + li { margin-top: 0; }
+
+.toc a {
+  color: var(--fg-dim);
+  text-decoration: none;
+}
+
+.toc a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+}
+
+/* ---------------------------------------------------------------------------
+   Responsive
+--------------------------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  :root {
+    --rail: 36px;
+    --col: 100%;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced motion
+
+   The cursor still shows, it just stops blinking. Removing it entirely would
+   drop the only affordance marking the active nav item.
+--------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  [aria-current] .cur::before,
+  .row:hover .cur::before,
+  .row:focus-visible .cur::before {
+    animation: none;
+    opacity: 1;
+  }
+
+  [aria-current] .cur,
+  .row:hover .cur,
+  .row:focus-visible .cur {
+    animation: none;
+    color: var(--bg);
+  }
+}
