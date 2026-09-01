@@ -24,4 +24,5 @@ pnpm-debug.log*
 .idea/
 src/content/blog/
 public/blog/
-public/resume.pdf
+# NOTE: resume.pdf is deliberately NOT ignored. It has to be committed
+# or CI checks out a repo without it and the download 404s in production.
