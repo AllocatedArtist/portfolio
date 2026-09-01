@@ -3,6 +3,13 @@ import "../styles/global.css";
 import Rail from "../components/Rail.astro";
 import ShaderBackground from "../components/ShaderBackground.astro";
 import type { RailItem } from "../components/Rail.astro";
+import { withBase } from "../lib/href";
+
+// Imported rather than written as literal paths so Vite emits the hashed,
+// base-prefixed URL. These must resolve to the same files the @font-face
+// rules in global.css reference, or the preload is wasted and fetches twice.
+import zedRegular from "../assets/fonts/zedmono-regular.woff2?url";
+import zedMedium from "../assets/fonts/zedmono-medium.woff2?url";
 
 /**
  * The page shell. Every route renders through this.
@@ -40,27 +47,15 @@ const canonical = Astro.site
     {description && <meta name="description" content={description} />}
     {canonical && <link rel="canonical" href={canonical} />}
 
-    <link rel="icon" href="/favicon.ico" sizes="32x32" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="sitemap" href="/sitemap-index.xml" />
+    <link rel="icon" href={withBase("/favicon.ico")} sizes="32x32" />
+    <link rel="icon" href={withBase("/favicon.svg")} type="image/svg+xml" />
+    <link rel="sitemap" href={withBase("/sitemap-index.xml")} />
 
     <!-- Same-origin and small, but still worth fetching in parallel with the
          stylesheet: the whole page is set in this one face, so a late font
          means a reflow of everything at once. -->
-    <link
-      rel="preload"
-      href="/fonts/zedmono-regular.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      href="/fonts/zedmono-medium.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
+    <link rel="preload" href={zedRegular} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={zedMedium} as="font" type="font/woff2" crossorigin />
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content={heading} />

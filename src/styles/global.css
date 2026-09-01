@@ -1,7 +1,11 @@
 /* ---------------------------------------------------------------------------
    Portfolio design system.
 
-   Subset of ZedMono Nerd Font Mono (SIL OFL, see public/fonts/LICENSE.md).
+   Subset of ZedMono Nerd Font Mono (SIL OFL, see src/assets/fonts/LICENSE.md).
+
+   The @font-face URLs are relative on purpose. That routes them through
+   Vite, which rewrites them with the configured `base` and a content hash.
+   A root-absolute "/fonts/…" would 404 on the /portfolio/ deploy.
    Covers Latin-1, general punctuation, arrows, math operators, box drawing,
    block elements, geometric shapes, and nine Nerd Font icon glyphs. If you
    need a glyph outside that range, re-run the subset rather than swapping in
@@ -10,7 +14,7 @@
 
 @font-face {
   font-family: "ZedMono";
-  src: url("/fonts/zedmono-regular.woff2") format("woff2");
+  src: url("../assets/fonts/zedmono-regular.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -18,7 +22,7 @@
 
 @font-face {
   font-family: "ZedMono";
-  src: url("/fonts/zedmono-medium.woff2") format("woff2");
+  src: url("../assets/fonts/zedmono-medium.woff2") format("woff2");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
