@@ -3,18 +3,6 @@ import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
 import Row from "../components/Row.astro";
 
-/**
- * Home.
- *
- * The content below is placeholder, hardcoded on purpose. This page exists
- * to show every styled primitive in one place while the content pipeline is
- * still being written; swap these arrays for getCollection() calls when the
- * collections have entries.
- *
- * Note that getCollection returns [] for a missing collection directory, so
- * guard before indexing rather than assuming projects[0] exists.
- */
-
 const projects = await getCollection('projects');
 const posts = await getCollection('blog');
 ---
