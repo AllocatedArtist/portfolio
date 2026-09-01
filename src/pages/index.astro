@@ -2,19 +2,22 @@
 import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
 import Row from "../components/Row.astro";
+import { year } from "../lib/date";
 
-const projects = await getCollection('projects');
+import { site } from "../lib/site.ts"
+
+const projects = await getCollection('projects', p => p.data.featured);
 const posts = await getCollection('blog');
 ---
 
 <Base
   title="Seven Flaminiano"
-  description="Graphics and engine enthusiast."
+  description={site.role}
 >
   <div class="stack intro">
-    <h1>Graphics and game engine programmer</h1>
+    <h1>{site.role}</h1>
     <p class="lede">
-    I enjoy graphics, systems, and low-level programming. Mostly
+      I write engines and the low-level systems underneath them. Mostly
       C and C++.
     </p>
   </div>
@@ -28,23 +31,8 @@ const posts = await getCollection('blog');
             href={`/projects/${project.id}`}
             title={project.data.title}
             blurb={project.data.blurb}
-            meta={String(project.data.date.getFullYear())}
+            meta={year(project.data.date)}
           />
-        ))
-      }
-    </div>
-  </section>
-
-  <section class="stack section">
-    <h2 class="eyebrow">Writing</h2>
-    <div class="rows">
-      {
-        posts.map((post) => (
-        <Row 
-          href={`/blogs/${post.id}`} 
-          title={post.data.title} 
-          meta={post.data.date.getFullYear()} 
-        />
         ))
       }
     </div>

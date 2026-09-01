@@ -2,23 +2,21 @@
 import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
 import Row from "../components/Row.astro";
+import { year } from "../lib/date";
 
 const blogs = await getCollection('blog');
 ---
 
-<Base title="writing">
+<Base 
+  title="Writing"
+  description="My personal notes."
+>
   <header class="masthead">
-    <h2>What is this?</h2>
-    <p class="meta">
-    These are my personal notes about the stuff I code. After I build something fairly monumental, or something interesting, I'll write about my experience here. 
-    It'll be messy and random, but hopefully it helps me internalize what I build.
-    </p>
-    <br>
-    <p class="meta">
-    Keep in mind that this will be 
-    informal, and some parts plain wrong (hopefully not!) so don't use this as a tutorial or source of truth please! 
-    If there is an egregious error of some sort, feel free to email me about it.
-    Lastly, my LaTeX might not be the best, but hopefully that improves in the future.
+    <h1>Writing</h1>
+    <p class="note">
+    These are my personal notes on what I build written to help
+    me internalize new information, not to teach it. So, if you catch
+    a mistake, feel free to email me.
     </p>
   </header>
   <div class="rows">
@@ -28,7 +26,7 @@ const blogs = await getCollection('blog');
           href={`/blogs/${blog.id}`}
           title={blog.data.title}
           blurb={blog.data.blurb}
-          meta={String(blog.data.date.getFullYear())}
+          meta={year(blog.data.date)}
         />
       ))
     }

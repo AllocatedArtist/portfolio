@@ -2,11 +2,21 @@
 import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
 import Row from "../components/Row.astro";
+import { year } from "../lib/date";
 
 const projects = await getCollection('projects');
 ---
 
-<Base title="work">
+<Base 
+  title="Work"
+  description="Games, renderers, and systems."
+>
+  <header class="masthead">
+    <h1>Work</h1>
+    <p class="note">
+      Games, renderers, and systems.
+    </p>
+  </header>
   <div class="rows">
     {
       projects.map((project) => (
@@ -14,7 +24,7 @@ const projects = await getCollection('projects');
           href={`/projects/${project.id}`}
           title={project.data.title}
           blurb={project.data.blurb}
-          meta={String(project.data.date.getFullYear())}
+          meta={year(project.data.date)}
         />
       ))
     }
