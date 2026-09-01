@@ -1,0 +1,63 @@
+---
+import CursorText from "./CursorText.astro";
+
+/**
+ * One line in a listing: title, optional blurb, optional trailing meta.
+ *
+ * Listings are rows separated by hairline rules rather than a grid of
+ * cards. Cards over an animated background create a second layer competing
+ * for attention on every frame; a text list stays quiet and scans faster.
+ *
+ * Wrap a group of these in <div class="rows"> for the shared top border.
+ */
+interface Props {
+  href: string;
+  title: string;
+  blurb?: string;
+  meta?: string;
+}
+
+const { href, title, blurb, meta } = Astro.props;
+---
+
+<a class="row" href={href}>
+  <span class="body">
+    <span class="title"><CursorText text={title} /></span>
+    {blurb && <span class="blurb">{blurb}</span>}
+  </span>
+  {meta && <span class="meta">{meta}</span>}
+</a>
+
+<style>
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--sp-5);
+    padding-block: var(--sp-4);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .title {
+    font-size: var(--s-md);
+  }
+
+  .blurb {
+    margin-top: var(--sp-1);
+    font-size: var(--s-sm);
+    color: var(--fg-dim);
+  }
+
+  .meta {
+    flex: none;
+    font-size: var(--s-sm);
+    color: var(--fg-dim);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

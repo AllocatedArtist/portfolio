@@ -1,0 +1,20 @@
+---
+/**
+ * Full-viewport shader canvas plus the legibility scrim.
+ *
+ * Both layers are position:fixed and sit behind the content on negative
+ * z-index, so scrolling never repaints them and nothing in the document
+ * flow has to account for them.
+ *
+ * The canvas is aria-hidden and carries no text: it is decoration, and the
+ * page reads identically with it removed. The script fails soft, so a
+ * browser without WebGL2 gets the flat --bg colour instead.
+ */
+---
+
+<canvas class="bg-canvas" aria-hidden="true"></canvas>
+<div class="bg-scrim" aria-hidden="true"></div>
+
+<script>
+  import "../scripts/background.ts";
+</script>

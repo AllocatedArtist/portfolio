@@ -1,0 +1,36 @@
+---
+/**
+ * Wraps the first character of `text` in a span so a terminal block cursor
+ * can be drawn over that single character cell.
+ *
+ * The split happens here at build time rather than in client JavaScript,
+ * which is what keeps the cursor a zero-JS feature. Styling lives in
+ * global.css because the trigger states (`[aria-current]`, `.row:hover`)
+ * are set by ancestor elements in other components, and scoped CSS cannot
+ * reach across a component boundary.
+ *
+ * Uses Array.from so an astral-plane first character (an emoji, a Nerd Font
+ * icon glyph) is taken as one code point instead of half a surrogate pair.
+ */
+interface Props {
+  text: string;
+}
+
+const { text } = Astro.props;
+
+// Fail loudly and legibly. The usual cause is reading a collection entry
+// flat (entry.title) when the frontmatter actually lives under entry.data
+// (entry.data.title), which otherwise surfaces as "undefined is not
+// iterable" from deep inside the compiled output.
+if (typeof text !== "string") {
+  throw new Error(
+    `CursorText: expected a string, received ${text === undefined ? "undefined" : typeof text}. ` +
+      `If this came from a content collection, frontmatter lives on entry.data.`,
+  );
+}
+
+const chars = Array.from(text);
+const first = chars[0] ?? "";
+const rest = chars.slice(1).join("");
+---
+<span class="cur">{first}</span>{rest}

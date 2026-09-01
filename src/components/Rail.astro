@@ -1,0 +1,106 @@
+---
+import CursorText from "./CursorText.astro";
+
+/**
+ * Fixed vertical nav down the left edge. Items are packed to the bottom and
+ * read bottom-to-top, so the name sits lowest and the list runs up from it.
+ *
+ * The active item is marked with aria-current="page", which is both the
+ * correct semantics and the styling hook the block cursor keys off.
+ *
+ * A detail route has no rail item of its own, so `match` lists the path
+ * prefixes that should light a section: an individual project keeps `work`
+ * lit, an individual post keeps `writing` lit.
+ */
+export interface RailItem {
+  label: string;
+  href: string;
+  /** Extra path prefixes that count as "inside" this section. */
+  match?: string[];
+}
+
+interface Props {
+  items?: RailItem[];
+}
+
+const DEFAULT_ITEMS: RailItem[] = [
+  { label: "contact", href: "/contact" },
+  { label: "writing", href: "/writing", match: ["/blogs"] },
+  { label: "work", href: "/work", match: ["/projects"] },
+  { label: "seven flaminiano", href: "/" },
+];
+
+const { items = DEFAULT_ITEMS } = Astro.props;
+
+// Trailing slashes vary with Astro's build config, so normalise before
+// comparing. "/" must match exactly or it would claim every route.
+const path = Astro.url.pathname.replace(/\/+$/, "") || "/";
+
+function isCurrent(item: RailItem): boolean {
+  const prefixes = [item.href, ...(item.match ?? [])];
+  return prefixes.some((prefix) => {
+    const p = prefix.replace(/\/+$/, "") || "/";
+    return p === "/" ? path === "/" : path === p || path.startsWith(`${p}/`);
+  });
+}
+
+const active = items.find(isCurrent);
+---
+
+<nav class="rail" aria-label="Primary">
+  {
+    items.map((item) => (
+      <a
+        href={item.href}
+        class:list={["rail-item", { name: item.href === "/" }]}
+        aria-current={item === active ? "page" : undefined}
+      >
+        <CursorText text={item.label} />
+      </a>
+    ))
+  }
+</nav>
+
+<style>
+  .rail {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: var(--rail);
+    z-index: 5;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--sp-6);
+
+    padding-block: var(--sp-5) var(--sp-5);
+    border-inline-end: 1px solid var(--rule);
+
+    font-size: var(--s-sm);
+  }
+
+  /* vertical-rl lays the text down the column; the 180deg turn flips it so
+     it reads bottom-to-top rather than top-to-bottom. */
+  .rail-item {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    white-space: nowrap;
+    color: var(--fg-dim);
+    transition: color 120ms linear;
+  }
+
+  .rail-item:hover,
+  .rail-item[aria-current] {
+    color: var(--fg);
+  }
+
+  .name {
+    color: var(--fg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rail-item { transition: none; }
+  }
+</style>
