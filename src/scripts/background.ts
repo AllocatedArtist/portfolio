@@ -13,6 +13,15 @@ import vertexSource from "../shaders/fullscreen.vert";
 
 const MAX_DPR = 2;
 
+/**
+ * Ceiling on drawing-buffer pixels. A raymarcher is fragment-bound, so cost
+ * scales with this number directly. A modern phone reports dpr 3, which at
+ * 390x844 CSS pixels would mean ~3.0M fragments every frame and a hot
+ * battery for a decorative background. Capping at 1.4M keeps a desktop
+ * 1440p canvas untouched while pulling phones back to roughly dpr 1.8.
+ */
+const MAX_PIXELS = 1_400_000;
+
 function compile(
   gl: WebGL2RenderingContext,
   type: number,
@@ -91,9 +100,18 @@ function start(canvas: HTMLCanvasElement): void {
   let height = 0;
 
   function resize(): void {
-    const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
-    const w = Math.max(1, Math.round(window.innerWidth * dpr));
-    const h = Math.max(1, Math.round(window.innerHeight * dpr));
+    const cssW = window.innerWidth;
+    const cssH = window.innerHeight;
+
+    let dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+
+    // Scale dpr down until the buffer fits the fragment budget. Sqrt because
+    // the budget is an area and dpr scales both axes.
+    const over = (cssW * cssH * dpr * dpr) / MAX_PIXELS;
+    if (over > 1) dpr /= Math.sqrt(over);
+
+    const w = Math.max(1, Math.round(cssW * dpr));
+    const h = Math.max(1, Math.round(cssH * dpr));
     if (w === width && h === height) return;
 
     width = w;

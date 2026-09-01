@@ -104,6 +104,56 @@ const active = items.find(isCurrent);
     color: var(--fg);
   }
 
+  /* Phones: the vertical bar costs about a tenth of a 375px viewport and
+     sideways text is genuinely harder to read, so the rail becomes a bottom
+     bar. Bottom rather than top because it is thumb-reachable. Reading order
+     is preserved: the name still comes first.
+
+     The block cursor needs no changes. Its ::before is inset:0 on a
+     one-character span, so it is correct in either writing mode. */
+  @media (max-width: 760px) {
+    .rail {
+      inset-block: auto 0;
+      inset-inline: 0;
+      width: auto;
+      height: var(--rail-h);
+
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--sp-3);
+
+      padding-block: 0;
+      padding-inline: var(--sp-5);
+
+      border-inline-end: none;
+      border-block-start: 1px solid var(--rule);
+
+      /* Opaque: content scrolls underneath it. */
+      background: var(--bg);
+    }
+
+    .rail-item {
+      writing-mode: horizontal-tb;
+      transform: none;
+
+      /* Stretch to the bar height so the tap target is 52px tall even
+         though the text is 13px. */
+      display: flex;
+      align-items: center;
+      align-self: stretch;
+    }
+
+    /* Four labels total ~34 characters. At 13px in a 0.5em-advance face
+       that is ~220px, which clears a 320px viewport once padding and gaps
+       are taken out. Shrink rather than overflow if a label grows: pass
+       shorter `items` to <Rail> if you ever need to. */
+    .rail-item {
+      min-width: 0;
+      white-space: nowrap;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .rail-item { transition: none; }
   }

@@ -64,5 +64,11 @@ const { href, title, blurb, meta } = Astro.props;
     font-size: var(--s-sm);
     color: var(--fg-dim);
     font-variant-numeric: tabular-nums;
+    /* "2025-06-14" must not break across lines when the title wraps. */
+    white-space: nowrap;
+  }
+
+  @media (max-width: 760px) {
+    .row { gap: var(--sp-3); }
   }
 </style>

@@ -64,7 +64,8 @@
   --sp-9: 96px;
 
   /* Layout */
-  --rail:    46px;   /* width of the fixed vertical nav */
+  --rail:    46px;   /* inline width of the vertical nav (desktop) */
+  --rail-h:  0px;    /* block height of the horizontal nav (phones) */
   --col:     46%;    /* content column, leaves the right side to the shader */
   --measure: 62ch;   /* prose line length */
   --scrim:   0.8;    /* opacity of --bg over the shader, for legibility */
@@ -94,6 +95,7 @@ img, svg, video, canvas { display: block; max-width: 100%; }
 
 body {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font);
@@ -123,7 +125,7 @@ a { color: inherit; text-decoration: none; }
 --------------------------------------------------------------------------- */
 
 .shell {
-  padding-block: clamp(28px, 5vh, 56px) 25vh;
+  padding-block: clamp(28px, 5vh, 56px) calc(clamp(96px, 25vh, 240px) + var(--rail-h));
   padding-inline: clamp(20px, 4vw, 64px) 0;
   padding-inline-start: calc(var(--rail) + clamp(18px, 3vw, 44px));
 }
@@ -442,11 +444,52 @@ h3 { font-size: var(--s-lg); }
    Responsive
 --------------------------------------------------------------------------- */
 
+/* The 46% column only earns its keep when there is enough width left over
+   for the shader to be worth seeing. Below that, the column widens and the
+   type scale steps down a notch. Sizes still come only from the 1.25 scale,
+   recomputed at a smaller base: 18px for tablets, 16px for phones. */
+
+@media (max-width: 1200px) {
+  :root {
+    --col: 72%;
+
+    --s-xs:  12px;
+    --s-sm:  14px;
+    --s-md:  18px;
+    --s-lg:  23px;
+    --s-xl:  28px;
+    --s-2xl: 35px;
+    --s-3xl: 44px;
+  }
+}
+
 @media (max-width: 760px) {
   :root {
-    --rail: 36px;
     --col: 100%;
+    --rail: 0px;
+    --rail-h: 52px;
+
+    --s-xs:  10px;
+    --s-sm:  13px;
+    --s-md:  16px;
+    --s-lg:  20px;
+    --s-xl:  25px;
+    --s-2xl: 31px;
+    --s-3xl: 39px;
   }
+
+  /* A fixed bottom bar already separates chrome from content, so the page
+     does not also need a deep run-out beneath the last row. */
+  .shell {
+    padding-inline: var(--sp-5);
+    padding-block-end: calc(var(--sp-8) + var(--rail-h));
+  }
+
+  .masthead { margin-top: var(--sp-5); }
+
+  /* Long single-token strings in prose (URLs, identifiers) would otherwise
+     push the body sideways on a narrow screen. */
+  .prose { overflow-wrap: break-word; }
 }
 
 /* ---------------------------------------------------------------------------
