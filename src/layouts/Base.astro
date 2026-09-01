@@ -1,0 +1,81 @@
+---
+import "../styles/global.css";
+import Rail from "../components/Rail.astro";
+import ShaderBackground from "../components/ShaderBackground.astro";
+import type { RailItem } from "../components/Rail.astro";
+
+/**
+ * The page shell. Every route renders through this.
+ *
+ * The default slot lands inside the left-pinned content column, so pages
+ * only supply their own content and never repeat the layout.
+ */
+interface Props {
+  title: string;
+  description?: string;
+  /** Override the nav; see Rail.astro for the shape. */
+  railItems?: RailItem[];
+}
+
+const { title, description, railItems } = Astro.props;
+
+const SITE = "Seven Flaminiano";
+const heading = title === SITE ? SITE : `${title} — ${SITE}`;
+
+// Astro.site is set in astro.config.mjs; guard anyway so a missing value
+// degrades to no canonical rather than throwing during the build.
+const canonical = Astro.site
+  ? new URL(Astro.url.pathname, Astro.site).href
+  : undefined;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{heading}</title>
+    {description && <meta name="description" content={description} />}
+    {canonical && <link rel="canonical" href={canonical} />}
+
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <!-- Same-origin and small, but still worth fetching in parallel with the
+         stylesheet: the whole page is set in this one face, so a late font
+         means a reflow of everything at once. -->
+    <link
+      rel="preload"
+      href="/fonts/zedmono-regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/zedmono-medium.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={heading} />
+    {description && <meta property="og:description" content={description} />}
+    {canonical && <meta property="og:url" content={canonical} />}
+  </head>
+
+  <body>
+    <ShaderBackground />
+    <Rail items={railItems} />
+
+    <main class="shell">
+      <div class="col">
+        <slot />
+      </div>
+    </main>
+  </body>
+</html>
