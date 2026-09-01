@@ -20,17 +20,46 @@ interface Props {
   title: string;
   blurb?: string;
   meta?: string;
+  /** Nerd Font glyph, from `icon` in src/lib/site.ts. Decorative only. */
+  icon?: string;
+  /** Save the target instead of navigating. Same-origin files only. */
+  download?: boolean;
+  /** Force new-tab behaviour on or off. Defaults to true for http(s) links. */
+  newTab?: boolean;
 }
 
-const { href, title, blurb, meta } = Astro.props;
+const { href, title, blurb, meta, icon, download, newTab } = Astro.props;
+
+// A bare "https://" or "mailto:" is left alone by withBase, so external and
+// internal links can share this component.
+const isExternal = /^[a-z][a-z0-9+.-]*:/i.test(href) && !href.startsWith("/");
+
+// Only web links open in a tab. A mailto: or tel: hands off to another
+// application, and target="_blank" there can strand an empty tab behind.
+// `download` wins over target anyway, so exclude it too.
+const isHttp = /^https?:/i.test(href);
+const opensNewTab = newTab ?? (isHttp && !download);
 ---
 
-<a class="row" href={withBase(href)}>
+<a
+  class="row"
+  href={withBase(href)}
+  download={download ? "" : undefined}
+  target={opensNewTab ? "_blank" : undefined}
+  rel={isExternal ? "noopener" : undefined}
+>
   <span class="body">
-    <span class="title"><CursorText text={title} /></span>
+    <span class="title">
+      {icon && <span class="icon" aria-hidden="true">{icon}</span>}
+      <CursorText text={title} />
+    </span>
+
     {blurb && <span class="blurb">{blurb}</span>}
   </span>
   {meta && <span class="meta">{meta}</span>}
+  {/* WCAG 3.2.5: a link that changes context should say so. The icon is
+      aria-hidden, so without this a screen reader gets no warning. */}
+  {opensNewTab && <span class="sr-only">(opens in a new tab)</span>}
 </a>
 
 <style>
@@ -51,6 +80,19 @@ const { href, title, blurb, meta } = Astro.props;
 
   .title {
     font-size: var(--s-md);
+  }
+
+  /* Fixed 2ch box so labels align down the column regardless of how wide
+     each glyph draws. aria-hidden, because the adjacent text already names
+     the link and a screen reader would otherwise announce a PUA codepoint. */
+  .icon {
+    display: inline-block;
+    width: 2ch;
+    color: var(--fg-dim);
+  }
+
+  .row:hover .icon {
+    color: var(--accent);
   }
 
   .blurb {
