@@ -22,7 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
-src/content/blog/
 public/blog/
 # NOTE: resume.pdf is deliberately NOT ignored. It has to be committed
 # or CI checks out a repo without it and the download 404s in production.

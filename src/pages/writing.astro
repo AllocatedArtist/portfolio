@@ -4,7 +4,7 @@ import Base from "../layouts/Base.astro";
 import Row from "../components/Row.astro";
 import { year } from "../lib/date";
 
-const blogs = await getCollection('blog');
+const posts = await getCollection('posts');
 ---
 
 <Base 
@@ -21,12 +21,12 @@ const blogs = await getCollection('blog');
   </header>
   <div class="rows">
     {
-      blogs.map((blog) => (
+      posts.map((post) => (
         <Row
-          href={`/blogs/${blog.id}`}
-          title={blog.data.title}
-          blurb={blog.data.blurb}
-          meta={year(blog.data.date)}
+          href={`/posts/${post.id}`}
+          title={post.data.title}
+          blurb={post.data.blurb}
+          meta={year(post.data.date)}
         />
       ))
     }
