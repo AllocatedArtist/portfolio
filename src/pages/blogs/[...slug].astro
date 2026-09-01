@@ -1,0 +1,29 @@
+---
+import { getCollection, render } from 'astro:content'
+import Base from '../../layouts/Base.astro';
+import { longDate, machineDate } from "../../lib/date"
+
+export async function getStaticPaths() {
+  const blogs = await getCollection('blog');
+  return blogs.map(b => ({
+    params: { slug: b.id }, 
+    props: { blog: b },
+  }));
+}
+
+const { blog } = Astro.props;
+
+---
+<Base title={blog.data.title}>
+  <header class="masthead">
+    <h1>{blog.data.title}</h1>
+    <time class="meta"
+      datetime={machineDate(blog.data.date)}>
+      {longDate(blog.data.date)}
+    </time>
+  </header>
+
+  <div class="prose">
+    <article set:html={blog.data.html} />
+  </div>
+</Base>

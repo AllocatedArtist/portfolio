@@ -1,0 +1,22 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../layouts/Base.astro";
+import Row from "../components/Row.astro";
+
+const projects = await getCollection('projects');
+---
+
+<Base>
+  <div class="rows">
+    {
+      projects.map((project) => (
+        <Row
+          href={`/projects/${project.id}`}
+          title={project.data.title}
+          blurb={project.data.blurb}
+          meta={String(project.data.date.getFullYear())}
+        />
+      ))
+    }
+  </div>
+</Base>

@@ -1,0 +1,36 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../layouts/Base.astro";
+import Row from "../components/Row.astro";
+
+const blogs = await getCollection('blog');
+---
+
+<Base>
+  <header class="masthead">
+    <h2>What is this?</h2>
+    <p class="meta">
+    These are my personal notes about the stuff I code. After I build something fairly monumental, or something interesting, I'll write about my experience here. 
+    It'll be messy and random, but hopefully it helps me internalize what I build.
+    </p>
+    <br>
+    <p class="meta">
+    Keep in mind that this will be 
+    informal, and some parts plain wrong (hopefully not!) so don't use this as a tutorial or source of truth please! 
+    If there is an egregious error of some sort, feel free to email me about it.
+    Lastly, my LaTeX might not be the best, but hopefully that improves in the future.
+    </p>
+  </header>
+  <div class="rows">
+    {
+      blogs.map((blog) => (
+        <Row
+          href={`/blogs/${blog.id}`}
+          title={blog.data.title}
+          blurb={blog.data.blurb}
+          meta={String(blog.data.date.getFullYear())}
+        />
+      ))
+    }
+  </div>
+</Base>
