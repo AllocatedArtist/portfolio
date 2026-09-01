@@ -1,5 +1,6 @@
 ---
 import CursorText from "./CursorText.astro";
+import { withBase } from "../lib/href";
 
 /**
  * One line in a listing: title, optional blurb, optional trailing meta.
@@ -9,6 +10,10 @@ import CursorText from "./CursorText.astro";
  * for attention on every frame; a text list stays quiet and scans faster.
  *
  * Wrap a group of these in <div class="rows"> for the shared top border.
+ *
+ * `href` is passed through withBase(), so callers write bare root-relative
+ * paths ("/projects/foo") and the deploy base is applied here. Absolute URLs
+ * and anchors pass through untouched.
  */
 interface Props {
   href: string;
@@ -20,7 +25,7 @@ interface Props {
 const { href, title, blurb, meta } = Astro.props;
 ---
 
-<a class="row" href={href}>
+<a class="row" href={withBase(href)}>
   <span class="body">
     <span class="title"><CursorText text={title} /></span>
     {blurb && <span class="blurb">{blurb}</span>}
