@@ -1,7 +1,7 @@
 ---
 title: Raycasting Engine
 date: 2024-07-19
-blurb: A no frills no gills platformer. (Checkpoints not included)
+blurb: Old-school renderer with simple level-editor.
 cover: ../../assets/projects/example/cover.png
 video: TgDCYEJ___U
 links:
