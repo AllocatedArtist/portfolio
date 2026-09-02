@@ -1,0 +1,13 @@
+{
+  "name": "Seven Flaminiano",
+  "short_name": "7f",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0A080C",
+  "theme_color": "#0A080C",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
