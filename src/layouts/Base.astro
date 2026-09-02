@@ -75,6 +75,26 @@ const canonical = Astro.site
         </>
       )
     }
+
+    {/* GoatCounter. No cookies and no fingerprinting, so no consent banner.
+        `is:inline` keeps Astro from bundling it: the data-goatcounter
+        attribute is the config, and it has to survive to the shipped tag.
+
+        PROD-gated so `npm run dev` does not pollute the numbers. count.js
+        also ignores localhost on its own, which covers `astro preview`.
+
+        Uniques come from a hash that rotates daily, so the same person
+        returning next week counts twice. Read it as direction, not headcount. */}
+    {
+      import.meta.env.PROD && (
+        <script
+          is:inline
+          async
+          src="https://gc.zgo.at/count.js"
+          data-goatcounter="https://allocatedartist.goatcounter.com/count"
+        />
+      )
+    }
   </head>
 
   <body>
