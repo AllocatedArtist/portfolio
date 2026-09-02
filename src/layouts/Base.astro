@@ -20,11 +20,13 @@ import zedMedium from "../assets/fonts/zedmono-medium.woff2?url";
 interface Props {
   title: string;
   description?: string;
+  /** Social preview image. Needs an absolute URL, so it is resolved below. */
+  image?: ImageMetadata;
   /** Override the nav; see Rail.astro for the shape. */
   railItems?: RailItem[];
 }
 
-const { title, description, railItems } = Astro.props;
+const { title, description, image, railItems } = Astro.props;
 
 const SITE = "Seven Flaminiano";
 const heading = title === SITE ? SITE : `${title} — ${SITE}`;
@@ -61,6 +63,18 @@ const canonical = Astro.site
     <meta property="og:title" content={heading} />
     {description && <meta property="og:description" content={description} />}
     {canonical && <meta property="og:url" content={canonical} />}
+    {
+      image && Astro.site && (
+        <>
+          {/* Crawlers will not resolve a relative path, so this has to be
+              absolute even though every other URL on the page is not. */}
+          <meta property="og:image" content={new URL(image.src, Astro.site).href} />
+          <meta property="og:image:width" content={String(image.width)} />
+          <meta property="og:image:height" content={String(image.height)} />
+          <meta name="twitter:card" content="summary_large_image" />
+        </>
+      )
+    }
   </head>
 
   <body>

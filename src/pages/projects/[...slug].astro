@@ -3,6 +3,7 @@ import { getCollection, getEntry, render } from 'astro:content'
 import Base from '../../layouts/Base.astro';
 import { longDate, machineDate } from "../../lib/date"
 import { withBase } from "../../lib/href"
+import { Image } from 'astro:assets';
 import YouTube from '../../components/YouTube.astro';
 
 export async function getStaticPaths() {
@@ -23,7 +24,11 @@ const post = project.data.post ? await getEntry(project.data.post) : undefined;
 const links = Object.entries(project.data.links);
 const tags = project.data.tags;
 ---
-<Base title={project.data.title} description={project.data.blurb}>
+<Base
+  title={project.data.title}
+  description={project.data.blurb}
+  image={project.data.cover}
+>
   <header class="masthead">
     <h1>{project.data.title}</h1>
     <time class="meta"
@@ -32,11 +37,21 @@ const tags = project.data.tags;
     </time>
   </header>
 
-  {project.data.video && (
-    <div class="media">
+  {/* One hero object. A demo video supersedes the still, so they share the
+      slot rather than stacking. The cover is still used for og:image either
+      way, so it is never dead weight. */}
+  <div class="media">
+    {project.data.video ? (
       <YouTube id={project.data.video} title={`${project.data.title} demo`} />
-    </div>
-  )}
+    ) : (
+      <Image
+        src={project.data.cover}
+        alt={project.data.coverAlt ?? ''}
+        widths={[480, 800, 1200]}
+        sizes="(max-width: 760px) 100vw, 46vw"
+      />
+    )}
+  </div>
 
   {(tags.length > 0 || links.length > 0 || post) && (
     <div class="details">
@@ -73,6 +88,25 @@ const tags = project.data.tags;
     flex-direction: column;
     gap: var(--sp-4);
     margin-block-end: var(--sp-6);
+  }
+
+  /* The cover keeps its own aspect ratio rather than being forced into the
+     video's 16:9 box. Covers are screenshots and renders at whatever shape
+     the source was, and pinning them to 16:9 letterboxed an ultrawide grab
+     by a quarter of its height.
+
+     Both dimensions are auto and both are capped, so the browser scales the
+     image down to satisfy whichever constraint binds first and the ratio is
+     never touched. max-width handles wide images, max-height handles tall
+     ones. No object-fit, because there is no box to fit into: the border
+     wraps the image itself, so there are no bars at any viewport size. */
+  .media :global(img) {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: clamp(220px, 40vh, 440px);
+    border: 1px solid var(--rule);
   }
 
   .refs {

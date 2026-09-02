@@ -10,6 +10,10 @@ const projects = defineCollection({
     date: z.coerce.date(),
     blurb: z.string().max(180),
     cover: image(),
+    // Describe what the image shows. Omit it and the cover is treated as
+    // decorative (alt=""), which is correct when it adds nothing beyond the
+    // title already above it.
+    coverAlt: z.string().optional(),
     // Bare 11-char YouTube ID, not a URL and not a self-hosted file. Rejecting
     // a pasted URL here is deliberate: it fails at build with a clear message
     // rather than rendering a broken iframe.
