@@ -49,8 +49,17 @@ const canonical = Astro.site
     {description && <meta name="description" content={description} />}
     {canonical && <link rel="canonical" href={canonical} />}
 
-    <link rel="icon" href={withBase("/favicon.ico")} sizes="32x32" />
-    <link rel="icon" href={withBase("/favicon.svg")} type="image/svg+xml" />
+    {/* Two different images on purpose. The tab gets the `7f` mark, because a
+        face at 16x16 is 256 pixels and resolves to a smear. The home-screen
+        icon gets the photo, which is 180px and up where it reads fine.
+
+        No favicon.svg: the source is a photograph, so there is nothing to
+        vectorise. Worth knowing if one is ever added back, Chrome and Firefox
+        prefer SVG over ICO, so a stale SVG silently wins over this .ico. */}
+    <link rel="icon" href={withBase("/favicon.ico")} sizes="16x16 32x32 48x48" />
+    <link rel="apple-touch-icon" href={withBase("/apple-touch-icon.png")} />
+    <link rel="manifest" href={withBase("/site.webmanifest")} />
+    <meta name="theme-color" content="#0A080C" />
     <link rel="sitemap" href={withBase("/sitemap-index.xml")} />
 
     <!-- Same-origin and small, but still worth fetching in parallel with the
