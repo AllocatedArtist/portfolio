@@ -68,7 +68,7 @@
   --rail-h:  0px;    /* block height of the horizontal nav (phones) */
   --col:     46%;    /* content column, leaves the right side to the shader */
   --measure: 62ch;   /* prose line length */
-  --scrim:   0.8;    /* opacity of --bg over the shader, for legibility */
+  --scrim:   0.5;    /* opacity of --bg over the shader, for legibility */
 
   --font:      "ZedMono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --font-math: math, ui-serif, Georgia, serif;

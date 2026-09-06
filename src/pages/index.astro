@@ -19,6 +19,10 @@ const projects = await getCollection('projects', p => p.data.featured);
       I write engines and the low-level systems underneath them. Mostly
       C and C++.
     </p>
+    <p class="note rotate">
+      The background is a path tracer running in your browser. It is framed
+      for a wide viewport. Turn your phone sideways for the full scene.
+    </p>
   </div>
 
   <section class="stack section">
@@ -48,5 +52,22 @@ const projects = await getCollection('projects', p => p.data.featured);
   .section {
     gap: var(--sp-2);
     margin-top: clamp(40px, 8vh, 80px);
+  }
+
+  /* Only worth saying on a device that can actually be turned. Gated on the
+     760px breakpoint as well as orientation so a tall, narrow desktop window
+     does not get told to rotate a phone it does not have.
+
+     The shader itself keys off portrait alone, so a narrow desktop window
+     still gets the repositioned camera — it just does not get the note. */
+  .rotate {
+    display: none;
+  }
+
+  @media (orientation: portrait) and (max-width: 760px) {
+    .rotate {
+      display: block;
+      margin-top: var(--sp-2);
+    }
   }
 </style>
