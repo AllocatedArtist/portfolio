@@ -387,10 +387,13 @@ void main() {
   vec3 sceneColor = vec3(0.0);
 
   // uv is normalised by height, so the vertical FOV is pinned at 90 degrees
-  // and the horizontal one follows the aspect ratio. A phone held upright has
-  // roughly a 50 degree horizontal field against a laptop's 119, which leaves
-  // the window wall outside the frame entirely. Stepping the camera toward it
-  // recovers the shot without touching the projection.
+  // and the horizontal one follows the aspect ratio. A tall window drops to
+  // roughly a 50 degree horizontal field against a typical laptop's 119,
+  // which leaves the window wall outside the frame entirely. Stepping the
+  // camera toward it recovers the shot without touching the projection.
+  //
+  // This is for narrow desktop windows, not phones — background.ts declines
+  // to render on touch devices before this shader ever runs.
   bool portrait = uResolution.x < uResolution.y;
 
   for (int i = 0; i < NUM_RENDER; ++i) {

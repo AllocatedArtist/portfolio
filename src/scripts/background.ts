@@ -37,19 +37,6 @@ const MAX_DPR = 2;
 const MAX_PIXELS = 1_400_000;
 
 /**
- * Much tighter budget when the viewport is taller than it is wide.
- *
- * A phone at 390x844 CSS pixels lands at 1.32M under the desktop cap, which
- * is close to a megapixel and a half of nine-bounce path tracing on a phone
- * GPU — long frames, convergence measured in minutes, and a warm phone the
- * whole time. Since the canvas element is sized in CSS and only its backing
- * store is set in device pixels, dropping the budget just means the browser
- * upscales a smaller buffer for free. Behind body text and a 0.8 scrim,
- * that is not a difference anyone can see.
- */
-const MAX_PIXELS_PORTRAIT = 300_000;
-
-/**
  * Passes to gather before the trace pass stops for good.
  *
  * The image is static, so there is nothing to gain from tracing forever and
@@ -174,6 +161,26 @@ function createTarget(gl: WebGL2RenderingContext): Target | null {
 }
 
 function start(canvas: HTMLCanvasElement): void {
+  /**
+   * Touch-primary devices get the flat --bg and nothing else.
+   *
+   * Nine-bounce path tracing over a million-odd fragments is a mobile GPU
+   * running flat out for minutes to resolve an image sitting behind body
+   * text and a 0.8 scrim. The battery cost is real and the payoff is not.
+   * index.astro shows a note pointing at the desktop site instead.
+   *
+   * `pointer: coarse` reports the *primary* input, so a laptop with a
+   * touchscreen still reads as fine and still renders. It also does not
+   * change with orientation, which a width query would.
+   *
+   * Checked before getContext so nothing is allocated at all — no context,
+   * no shaders, no float buffers, no animation frame.
+   */
+  if (window.matchMedia("(pointer: coarse)").matches) {
+    canvas.remove();
+    return;
+  }
+
   const gl = canvas.getContext("webgl2", {
     antialias: false,
     alpha: false,
@@ -273,8 +280,7 @@ function start(canvas: HTMLCanvasElement): void {
 
     // Scale dpr down until the buffer fits the fragment budget. Sqrt because
     // the budget is an area and dpr scales both axes.
-    const budget = cssH > cssW ? MAX_PIXELS_PORTRAIT : MAX_PIXELS;
-    const over = (cssW * cssH * dpr * dpr) / budget;
+    const over = (cssW * cssH * dpr * dpr) / MAX_PIXELS;
     if (over > 1) dpr /= Math.sqrt(over);
 
     const w = Math.max(1, Math.round(cssW * dpr));
