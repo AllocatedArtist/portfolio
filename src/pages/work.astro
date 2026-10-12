@@ -4,7 +4,9 @@ import Base from "../layouts/Base.astro";
 import Row from "../components/Row.astro";
 import { year } from "../lib/date";
 
-const projects = await getCollection('projects');
+const projects = (await getCollection('projects')).sort((a, b) => 
+  b.data.date.valueOf() - a.data.date.valueOf()
+);
 ---
 
 <Base 
