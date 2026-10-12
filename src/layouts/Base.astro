@@ -4,6 +4,7 @@ import Rail from "../components/Rail.astro";
 import ShaderBackground from "../components/ShaderBackground.astro";
 import type { RailItem } from "../components/Rail.astro";
 import { withBase } from "../lib/href";
+import { ClientRouter } from "astro:transitions";
 
 // Imported rather than written as literal paths so Vite emits the hashed,
 // base-prefixed URL. These must resolve to the same files the @font-face
@@ -41,6 +42,7 @@ const canonical = Astro.site
 <!doctype html>
 <html lang="en">
   <head>
+    <ClientRouter />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />

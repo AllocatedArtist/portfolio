@@ -30,11 +30,10 @@ const MAX_DPR = 2;
  * scales with this number directly, and it is the first dial to turn if
  * frames get long enough to make scrolling feel sticky. A modern phone
  * reports dpr 3, which at 390x844 CSS pixels would mean ~3.0M fragments
- * every frame and a hot battery for a decorative background. Capping at 1.4M
- * keeps a desktop 1440p canvas untouched while pulling phones back to
- * roughly dpr 1.8.
+ * every frame and a hot battery for a decorative background. Capping at 700k
+ * pulls both desktop and phone canvases down to a more modest fragment budget.
  */
-const MAX_PIXELS = 1_400_000;
+const MAX_PIXELS = 700_000;
 
 /**
  * Passes to gather before the trace pass stops for good.
@@ -46,7 +45,14 @@ const MAX_PIXELS = 1_400_000;
  * because a WebGL drawing buffer is cleared after it is composited unless
  * preserveDrawingBuffer is set, and setting that costs more than the blit.
  */
-const MAX_PASSES = 4096;
+const MAX_PASSES = 1024;
+
+/**
+ * A decorative background does not need to trace indefinitely. The display
+ * pass continues presenting the last accumulated result after this deadline,
+ * but the expensive path-tracing pass stops.
+ */
+const MAX_SECONDS = 20;
 
 /**
  * Splice the offending source line into a driver log.
@@ -379,7 +385,7 @@ function start(canvas: HTMLCanvasElement): void {
     elapsed += (now - last) / 1000;
     last = now;
 
-    if (passes < MAX_PASSES) trace(elapsed);
+    if (passes < MAX_PASSES && elapsed < MAX_SECONDS) trace(elapsed);
     present();
   }
 
