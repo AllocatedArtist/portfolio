@@ -31,7 +31,7 @@ I wrote the project using `raylib`, `bulletphysics/bullet3`, `nlohmann/json`, `p
 
 <figure>
 <video controls playsinline preload="metadata" width="100%">
-  <source src="../videos/galaxy-stride-level-editor-demo.mp4"
+  <source src="../../portfolio/videos/galaxy-stride-level-editor-demo.mp4"
    type="video/mp4"/>
    Your browser does not support video playback.
 </video>
