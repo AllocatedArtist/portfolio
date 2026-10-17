@@ -9,7 +9,7 @@ links:
   game: https://allocatedartist.itch.io/galaxy-stride
 tags:
   - c++
-  - opengl
+  - raylib
   - 3d
 featured: true
 order: 1
